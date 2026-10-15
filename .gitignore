@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.local.*
+secrets.local.yaml
+kubeconfig*.txt
+*.kubeconfig
+
+# Local app/runtime data
+mlruns/
+mlartifacts/
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker and logs
+*.log
+docker-compose.override.yml
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store

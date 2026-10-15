@@ -1,0 +1,58 @@
+[
+  {
+    "id": "eval_001",
+    "category": "billing",
+    "question": "I was charged twice for my subscription this month, can I get a refund?",
+    "expected_route": "billing",
+    "expected_keywords": ["refund", "billing", "charge"]
+  },
+  {
+    "id": "eval_002",
+    "category": "technical",
+    "question": "I can't log into my account, it says invalid password even though I'm sure it's correct.",
+    "expected_route": "support",
+    "expected_keywords": ["password", "reset", "account"]
+  },
+  {
+    "id": "eval_003",
+    "category": "product_info",
+    "question": "What's the difference between the Pro and Enterprise plans?",
+    "expected_route": "knowledge",
+    "expected_keywords": ["plan", "pro", "enterprise"]
+  },
+  {
+    "id": "eval_004",
+    "category": "complaint",
+    "question": "This is the third time I'm contacting support about the same bug and nobody has fixed it. I want to speak to a manager right now.",
+    "expected_route": "escalation",
+    "expected_keywords": ["escalate", "human", "specialist"]
+  },
+  {
+    "id": "eval_005",
+    "category": "account",
+    "question": "How do I change the email address linked to my account?",
+    "expected_route": "knowledge",
+    "expected_keywords": ["email", "account", "settings"]
+  },
+  {
+    "id": "eval_006",
+    "category": "billing",
+    "question": "Can I downgrade from Enterprise to the Free plan mid-cycle?",
+    "expected_route": "billing",
+    "expected_keywords": ["downgrade", "plan", "billing cycle"]
+  },
+  {
+    "id": "eval_007",
+    "category": "technical",
+    "question": "The API is returning a 500 error whenever I try to upload a file larger than 10MB.",
+    "expected_route": "support",
+    "expected_keywords": ["error", "upload", "API"]
+  },
+  {
+    "id": "eval_008",
+    "category": "general",
+    "question": "What are your support hours?",
+    "expected_route": "knowledge",
+    "expected_keywords": ["hours", "support", "available"]
+  }
+]

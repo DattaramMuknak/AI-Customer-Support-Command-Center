@@ -1,0 +1,151 @@
+version: "3.9"
+
+# ── Networks ────────────────────────────────────────────────────────────────
+networks:
+  support-net:
+    driver: bridge
+
+# ── Volumes ─────────────────────────────────────────────────────────────────
+volumes:
+  mysql-data:
+  mlflow-data:
+  model-cache:
+
+# ── Services ────────────────────────────────────────────────────────────────
+services:
+
+  # ── MySQL ──────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: support-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: support_user
+      MYSQL_PASSWORD: support_pass
+      MYSQL_DATABASE: support_db
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "support_user", "-psupport_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - support-net
+
+  # ── MLflow tracking server ──────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.17.0
+    container_name: support-mlflow
+    restart: unless-stopped
+    command: >
+      mlflow server
+        --host 0.0.0.0
+        --port 5000
+        --backend-store-uri /mlflow/mlruns
+        --default-artifact-root /mlflow/artifacts
+    ports:
+      - "5001:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    networks:
+      - support-net
+
+  # ── FastAPI application ─────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: support-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Override DB/MLflow to use docker-compose service hostnames
+      DATABASE_URL: mysql+pymysql://support_user:support_pass@mysql:3306/support_db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      APP_ENV: development
+    ports:
+      - "8001:8000"
+      - "9001:8000"
+    volumes:
+      # Mount source for fast iteration — remove in production builds
+      - ./app:/app/app
+      - model-cache:/app/.cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - support-net
+
+  # ── Prometheus (scrapes /metrics from the API) ─────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: support-frontend
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://api:8000
+    command: >
+      streamlit run frontend/streamlit_app.py
+        --server.address 0.0.0.0
+        --server.port 8501
+        --server.headless true
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./frontend:/app/frontend
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8501/_stcore/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    
+    depends_on:
+      api:
+        condition: service_started
+        
+    networks:
+      - support-net
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: support-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+    networks:
+      - support-net
+
+  # ── Grafana (visualises Prometheus metrics) ────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: support-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - support-net

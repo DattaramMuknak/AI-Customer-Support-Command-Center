@@ -1,0 +1,107 @@
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: ai-support
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-svc
+  namespace: ai-support
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: ai-support
+spec:
+  replicas: 1
+
+  # Important: MySQL uses a single ReadWriteOnce PVC.
+  # Stop the old pod before starting the new pod.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: mysql
+
+  template:
+    metadata:
+      labels:
+        app: mysql
+
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 3306
+              name: mysql
+
+          env:
+            - name: MYSQL_DATABASE
+              value: support_db
+
+            - name: MYSQL_USER
+              value: support_user
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: MYSQL_PASSWORD
+
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: MYSQL_ROOT_PASSWORD
+
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+
+          readinessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - 127.0.0.1
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            failureThreshold: 12
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "384Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
+
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-data
+

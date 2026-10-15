@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-support-api-svc
+  namespace: ai-support
+  labels:
+    app: ai-support-api
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-support-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+---
+# ── Headless service for direct pod access (optional — useful for debugging) ──
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-support-api-headless
+  namespace: ai-support
+  labels:
+    app: ai-support-api
+spec:
+  clusterIP: None
+  selector:
+    app: ai-support-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000

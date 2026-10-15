@@ -1,0 +1,46 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-support-api-hpa
+  namespace: ai-support
+  labels:
+    app: ai-support-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-support-api
+
+  minReplicas: 2
+  maxReplicas: 8
+
+  metrics:
+    # Scale on CPU — LLM inference is CPU-heavy between local embedding ops
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+
+    # Scale on memory — sentence-transformers model in RAM
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60     # avoid thrashing on traffic spikes
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300    # scale down slowly to avoid churn
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120

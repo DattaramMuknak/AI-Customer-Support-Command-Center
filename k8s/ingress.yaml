@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-support-ingress
+  namespace: ai-support
+  labels:
+    app: ai-support-api
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"    # LLM calls can be slow
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"       # requires cert-manager
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.your-domain.com
+      secretName: ai-support-tls
+  rules:
+    - host: api.your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-support-api-svc
+                port:
+                  number: 80

@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-support-api
+  namespace: ai-support
+  labels:
+    app: ai-support-api
+    version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ai-support-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0          # zero-downtime rolling deploys
+  template:
+    metadata:
+      labels:
+        app: ai-support-api
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Graceful shutdown — give Uvicorn time to drain in-flight requests
+      terminationGracePeriodSeconds: 60
+
+      # Security: run as non-root (matches Dockerfile USER appuser uid=1001)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+      containers:
+        - name: api
+          image: ghcr.io/your-org/ai-support-platform:latest   # replaced by CI/CD
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+
+          # ── Environment ────────────────────────────────────────────────────
+          envFrom:
+            - configMapRef:
+                name: ai-support-config
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: SECRET_KEY
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: GROQ_API_KEY
+            - name: PINECONE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: PINECONE_API_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ai-support-secrets
+                  key: DATABASE_URL
+
+          # ── Probes ─────────────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # ── Resources ──────────────────────────────────────────────────────
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # ── Volume mounts ──────────────────────────────────────────────────
+          volumeMounts:
+            - name: model-cache
+              mountPath: /app/.cache
+
+      volumes:
+        - name: model-cache
+          emptyDir: {}            # ephemeral; replace with PVC if model is large
