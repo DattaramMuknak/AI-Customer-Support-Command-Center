@@ -2,7 +2,7 @@
 Security utilities: password hashing and JWT token creation/validation.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -25,9 +25,7 @@ def create_access_token(
     subject: str, extra_claims: dict[str, Any] | None = None
 ) -> str:
     """Create a signed JWT access token for a given subject (usually user id/email)."""
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.access_token_expire_minutes
-    )
+    expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
     to_encode: dict[str, Any] = {"sub": subject, "exp": expire}
     if extra_claims:
         to_encode.update(extra_claims)

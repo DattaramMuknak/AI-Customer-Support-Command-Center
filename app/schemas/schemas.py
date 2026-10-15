@@ -8,8 +8,8 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.db.models import SenderType, TicketPriority, TicketStatus
 
-
 # ---------- Auth ----------
+
 
 class UserCreate(BaseModel):
     email: EmailStr
