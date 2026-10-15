@@ -4,7 +4,6 @@
 
 ### 🚀 Enterprise-grade **multi-agent** customer support: RAG + Agentic AI + MLOps + Production Infra
 
-[![CI/CD](https://github.com/your-org/ai-support-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/your-org/ai-support-platform/actions/workflows/ci-cd.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2-orange.svg)](https://langchain-ai.github.io/langgraph/)
@@ -32,7 +31,6 @@ A full-stack AI platform that handles customer support end-to-end: a **LangGraph
 6. [⚡ Quick Start](#-quick-start-local)
 7. [🔌 Key API Endpoints](#-key-api-endpoints)
 8. [📊 MLOps: Offline Evaluation](#-mlops--offline-evaluation)
-9. [🚦 CI/CD Pipeline](#-cicd-pipeline)
 10. [☸️ Kubernetes](#️-kubernetes)
 11. [🔑 Required Secrets](#-required-secrets)
 12. [🗺️ Roadmap](#️-roadmap)
